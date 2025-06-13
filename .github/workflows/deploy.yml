@@ -39,7 +39,7 @@ jobs:
             sleep 5
           done
 
-      - name: Run Laravel Tests inside container
+      - name: Run Laravel Tests inside container (PHPUnit)
         run: |
           docker run --rm --network host \
             -e DB_CONNECTION=mysql \
@@ -48,4 +48,4 @@ jobs:
             -e DB_DATABASE=gestion_parcauto \
             -e DB_USERNAME=root \
             -e DB_PASSWORD=secret \
-            laravel-app php artisan test
+            laravel-app ./vendor/bin/phpunit
