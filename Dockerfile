@@ -1,7 +1,7 @@
-# Base image
-FROM php:8.2-fpm
+# Utiliser l'image officielle PHP avec les extensions nécessaires pour Laravel
+FROM php:8.2.27-fpm
 
-# Install system dependencies
+# Installer les dépendances système nécessaires
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -9,42 +9,34 @@ RUN apt-get update && apt-get install -y \
     zip \
     git \
     curl \
-    unzip \
-    nodejs \
-    npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install gd pdo pdo_mysql
 
-# Set working directory
-WORKDIR /var/www
-
-# Install Composer
+# Installer Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy only composer files first for caching
-COPY src/composer.json src/composer.lock ./
+# Définir le répertoire de travail
+WORKDIR /var/www
 
-# Install PHP dependencies
-RUN composer install
-
-
-# Now copy full Laravel project
+# Copier les fichiers Laravel du dossier src dans le conteneur
 COPY src/ .
 
-# Copy environment file
+# Copier le fichier .env dans le conteneur
 COPY .env .env
 
-# Build front-end assets
-RUN npm install && npm run build
+# Installer Node.js et npm
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
+    apt-get install -y nodejs
 
-# Set permissions for Laravel
-RUN mkdir -p storage bootstrap/cache && \
-    chown -R www-data:www-data storage bootstrap/cache && \
-    chmod -R 775 storage bootstrap/cache
+# Installer les dépendances PHP
+RUN composer install --no-dev --optimize-autoloader
 
-# Expose port
+
+# Donner des permissions aux dossiers requis par Laravel
+RUN mkdir -p storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
+
+# Exposer le port 9000
 EXPOSE 9000
 
-# Start PHP-FPM server
+# Lancer PHP-FPM
 CMD ["php-fpm"]
